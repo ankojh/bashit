@@ -1,0 +1,8 @@
+{"type":"thread.started","thread_id":"01a1cd49-f0c3-72f1-8d54-affa2a13f23f"}
+{"type":"item.completed","item":{"id":"item_0","type":"error","message":"Ignoring unknown `features` requirement `ultrafast_mode` from requirements layers: enterprise-managed requirements Ultra Fast mode access (rbac-ultrafast-mode), enterprise-managed requirements Computer History access (rbac-computer-history)"}}
+{"type":"item.completed","item":{"id":"item_1","type":"error","message":"Ignoring unknown `features` requirement `ultrafast_mode` from requirements layers: enterprise-managed requirements Ultra Fast mode access (rbac-ultrafast-mode), enterprise-managed requirements Computer History access (rbac-computer-history)"}}
+{"type":"turn.started"}
+{"type":"item.started","item":{"id":"item_2","type":"mcp_tool_call","server":"bashit","tool":"bash","arguments":{"command":"echo hello-from-mock && pwd && ls"},"result":null,"error":null,"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"item_2","type":"mcp_tool_call","server":"bashit","tool":"bash","arguments":{"command":"echo hello-from-mock && pwd && ls"},"result":{"content":[{"type":"text","text":"hello-from-mock\n/Users/ankojh/b12/bashit/.bashit/codex-test\nREADME.txt\n[exit code: 0]"}],"structured_content":null},"error":null,"status":"completed"}}
+{"type":"item.completed","item":{"id":"item_3","type":"agent_message","text":"mock turn complete"}}
+{"type":"turn.completed","usage":{"input_tokens":200,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":40,"reasoning_output_tokens":0}}

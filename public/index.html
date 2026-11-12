@@ -1,0 +1,1270 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>bashit</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23161b22'/%3E%3Ctext x='6' y='22' font-family='monospace' font-size='16' fill='%237ee787'%3E$%3C/text%3E%3C/svg%3E"
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f7f5;
+        --panel: #ffffff;
+        --panel-2: #f1f2ef;
+        --ink: #1c1f23;
+        --muted: #6b7280;
+        --line: #e2e4df;
+        --accent: #166534;
+        --accent-ink: #ffffff;
+        --user: #e8efe9;
+        --tool: #101418;
+        --tool-ink: #d6e2d8;
+        --ok: #15803d;
+        --bad: #b91c1c;
+        --warn: #b45309;
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 8px 24px rgba(0, 0, 0, 0.05);
+        --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0d1117;
+          --panel: #141a21;
+          --panel-2: #1b232c;
+          --ink: #e6edf3;
+          --muted: #93a0ad;
+          --line: #26303a;
+          --accent: #2ea043;
+          --accent-ink: #06210d;
+          --user: #1c2a24;
+          --tool: #080b0f;
+          --tool-ink: #c9d6cd;
+          --ok: #3fb950;
+          --bad: #f85149;
+          --warn: #d29922;
+          --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.35);
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--sans);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+        color: inherit;
+      }
+
+      .topbar {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        padding: 10px 18px;
+        background: var(--panel);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .brand {
+        font-family: var(--mono);
+        font-weight: 700;
+        font-size: 18px;
+        letter-spacing: -0.02em;
+        margin-right: 2px;
+      }
+
+      .brand span {
+        color: var(--accent);
+      }
+
+      .controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      .field {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        color: var(--muted);
+        font-size: 12.5px;
+        white-space: nowrap;
+      }
+
+      .field select,
+      .field input {
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 7px 9px;
+        font-size: 13px;
+        color: var(--ink);
+        outline: none;
+      }
+
+      .field select:focus,
+      .field input:focus,
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+      }
+
+      .field.workspace {
+        flex: 1 1 260px;
+        min-width: 0;
+      }
+
+      .field.workspace input {
+        flex: 1 1 auto;
+        min-width: 140px;
+        font-family: var(--mono);
+        font-size: 12.5px;
+      }
+
+      .field input:disabled {
+        opacity: 0.7;
+      }
+
+      .health {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 8px;
+        border-radius: 8px;
+        color: var(--muted);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      .health .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--muted);
+        flex: 0 0 auto;
+      }
+
+      .health.online .dot {
+        background: var(--ok);
+      }
+
+      .health.offline {
+        color: var(--bad);
+      }
+
+      .health.offline .dot {
+        background: var(--bad);
+      }
+
+      .spacer {
+        flex: 1 1 auto;
+      }
+
+      button {
+        border: 1px solid var(--line);
+        background: var(--panel-2);
+        border-radius: 8px;
+        padding: 7px 12px;
+        font-size: 13px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      button:hover {
+        filter: brightness(1.05);
+      }
+
+      button:disabled {
+        opacity: 0.55;
+        cursor: default;
+      }
+
+      button.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--accent-ink);
+        font-weight: 600;
+      }
+
+      button.stop {
+        background: var(--bad);
+        border-color: var(--bad);
+        color: #fff;
+        font-weight: 600;
+      }
+
+      .session-line {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 18px;
+        font-family: var(--mono);
+        font-size: 11.5px;
+        color: var(--muted);
+        background: var(--panel);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .session-line .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--accent);
+        flex: 0 0 auto;
+      }
+
+      .session-line .path {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      main {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 22px 18px 30px;
+        scroll-behavior: smooth;
+      }
+
+      .thread {
+        max-width: 920px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .empty {
+        max-width: 620px;
+        margin: 8vh auto 0;
+        text-align: center;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .empty h1 {
+        color: var(--ink);
+        font-size: 26px;
+        margin: 0 0 8px;
+        letter-spacing: -0.02em;
+      }
+
+      .empty code {
+        font-family: var(--mono);
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        padding: 2px 5px;
+        border-radius: 5px;
+        font-size: 13px;
+      }
+
+      .msg {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        max-width: 100%;
+      }
+
+      .msg .label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .msg.user {
+        align-items: flex-end;
+      }
+
+      .msg.user .bubble {
+        background: var(--user);
+        border: 1px solid var(--line);
+        border-radius: 14px 14px 4px 14px;
+        padding: 10px 14px;
+        max-width: 85%;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        line-height: 1.5;
+      }
+
+      .msg.assistant .bubble {
+        line-height: 1.58;
+        overflow-wrap: anywhere;
+        max-width: 100%;
+      }
+
+      .msg.assistant .bubble p {
+        margin: 0 0 0.8em;
+      }
+
+      .msg.assistant .bubble p:last-child {
+        margin-bottom: 0;
+      }
+
+      .msg.assistant .bubble pre {
+        background: var(--tool);
+        color: var(--tool-ink);
+        padding: 12px 14px;
+        border-radius: 9px;
+        overflow-x: auto;
+        font-family: var(--mono);
+        font-size: 12.5px;
+        line-height: 1.5;
+        margin: 0.7em 0;
+      }
+
+      .msg.assistant .bubble code {
+        font-family: var(--mono);
+        font-size: 0.92em;
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        padding: 1px 4px;
+        border-radius: 4px;
+      }
+
+      .msg.assistant .bubble pre code {
+        background: none;
+        border: 0;
+        padding: 0;
+        font-size: inherit;
+      }
+
+      .msg.error .bubble {
+        background: color-mix(in srgb, var(--bad) 10%, var(--panel));
+        border: 1px solid color-mix(in srgb, var(--bad) 35%, var(--line));
+        color: var(--ink);
+        border-radius: 10px;
+        padding: 10px 13px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        font-size: 13.5px;
+      }
+
+      .tool {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+      }
+
+      .tool summary {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 9px 12px;
+        cursor: pointer;
+        list-style: none;
+        user-select: none;
+        background: var(--panel);
+      }
+
+      .tool summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .tool summary .chev {
+        color: var(--muted);
+        font-size: 10px;
+        transition: transform 0.15s ease;
+        flex: 0 0 auto;
+      }
+
+      .tool[open] summary .chev {
+        transform: rotate(90deg);
+      }
+
+      .tool .cmd {
+        font-family: var(--mono);
+        font-size: 12.5px;
+        white-space: pre;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      .tool .badge {
+        flex: 0 0 auto;
+        font-family: var(--mono);
+        font-size: 10.5px;
+        padding: 2px 7px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        color: var(--muted);
+        background: var(--panel-2);
+      }
+
+      .tool .badge.ok {
+        color: var(--ok);
+        border-color: color-mix(in srgb, var(--ok) 35%, var(--line));
+        background: color-mix(in srgb, var(--ok) 10%, var(--panel));
+      }
+
+      .tool .badge.bad {
+        color: var(--bad);
+        border-color: color-mix(in srgb, var(--bad) 35%, var(--line));
+        background: color-mix(in srgb, var(--bad) 10%, var(--panel));
+      }
+
+      .tool .badge.stopped {
+        color: var(--warn);
+        border-color: color-mix(in srgb, var(--warn) 35%, var(--line));
+        background: color-mix(in srgb, var(--warn) 10%, var(--panel));
+      }
+
+      .tool .body {
+        border-top: 1px solid var(--line);
+      }
+
+      .tool pre {
+        margin: 0;
+        padding: 12px 13px;
+        max-height: 360px;
+        overflow: auto;
+        background: var(--tool);
+        color: var(--tool-ink);
+        font-family: var(--mono);
+        font-size: 12px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+
+      .tool .meta {
+        padding: 6px 12px;
+        font-size: 11px;
+        color: var(--muted);
+        border-top: 1px solid var(--line);
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .spinner {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid color-mix(in srgb, var(--accent) 30%, transparent);
+        border-top-color: var(--accent);
+        animation: spin 0.7s linear infinite;
+        flex: 0 0 auto;
+      }
+
+      .stopped-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 2px;
+        background: var(--warn);
+        flex: 0 0 auto;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .usage {
+        align-self: flex-start;
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+        padding: 2px 2px 0;
+      }
+
+      .stopped-note {
+        align-self: flex-start;
+        font-size: 12px;
+        color: var(--warn);
+      }
+
+      .composer {
+        flex: 0 0 auto;
+        border-top: 1px solid var(--line);
+        background: var(--panel);
+        padding: 12px 18px calc(12px + env(safe-area-inset-bottom));
+      }
+
+      .composer-inner {
+        max-width: 920px;
+        margin: 0 auto;
+        display: flex;
+        align-items: flex-end;
+        gap: 9px;
+      }
+
+      textarea {
+        flex: 1 1 auto;
+        resize: none;
+        min-height: 44px;
+        max-height: 190px;
+        padding: 11px 13px;
+        border-radius: 11px;
+        border: 1px solid var(--line);
+        background: var(--panel-2);
+        line-height: 1.4;
+        outline: none;
+        overflow-y: auto;
+      }
+
+      .composer button {
+        height: 44px;
+        min-width: 78px;
+        border-radius: 11px;
+        font-size: 14px;
+      }
+
+      .hint {
+        max-width: 920px;
+        margin: 6px auto 0;
+        font-size: 11px;
+        color: var(--muted);
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      @media (max-width: 720px) {
+        .topbar {
+          padding: 9px 12px;
+          gap: 9px;
+        }
+        .brand {
+          font-size: 16px;
+        }
+        .field.workspace {
+          order: 3;
+          flex-basis: 100%;
+        }
+        .controls {
+          gap: 8px;
+        }
+        main {
+          padding: 16px 12px 24px;
+        }
+        .composer {
+          padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+        }
+        .session-line {
+          padding: 6px 12px;
+        }
+        .msg.user .bubble {
+          max-width: 94%;
+        }
+        .hint .kbd {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">bash<span>it</span></div>
+      <div class="controls">
+        <label class="field">
+          <span>Model</span>
+          <select id="model" aria-label="Model"></select>
+        </label>
+        <label class="field workspace">
+          <span>Workspace</span>
+          <input
+            id="workspace"
+            type="text"
+            spellcheck="false"
+            placeholder="default: a fresh folder per chat"
+            aria-label="Workspace path"
+          />
+        </label>
+        <div id="health" class="health unknown" title="Checking the bashit server…">
+          <span class="dot"></span>
+          <span id="health-label">checking server…</span>
+        </div>
+        <button id="new-chat" type="button">New chat</button>
+      </div>
+    </header>
+
+    <div id="session-line" class="session-line" hidden>
+      <span class="dot"></span>
+      <span>workspace</span>
+      <span id="session-path" class="path"></span>
+    </div>
+
+    <main id="main">
+      <div id="thread" class="thread"></div>
+    </main>
+
+    <footer class="composer">
+      <div class="composer-inner">
+        <textarea
+          id="prompt"
+          rows="1"
+          placeholder="Ask bashit to build, inspect, or run something…"
+          aria-label="Prompt"
+        ></textarea>
+        <button id="send" class="primary" type="button">Send</button>
+      </div>
+      <div class="hint">
+        <span class="kbd">Enter to send · Shift+Enter for a new line</span>
+        <span>One tool: bash. It runs on your local machine with no sandbox.</span>
+      </div>
+    </footer>
+
+    <script>
+      const els = {
+        model: document.getElementById("model"),
+        workspace: document.getElementById("workspace"),
+        newChat: document.getElementById("new-chat"),
+        health: document.getElementById("health"),
+        healthLabel: document.getElementById("health-label"),
+        sessionLine: document.getElementById("session-line"),
+        sessionPath: document.getElementById("session-path"),
+        main: document.getElementById("main"),
+        thread: document.getElementById("thread"),
+        prompt: document.getElementById("prompt"),
+        send: document.getElementById("send"),
+      };
+
+      const storedModel = localStorage.getItem("bashit.model");
+      let sessionId = null;
+      let busy = false;
+      let stopRequested = false;
+      let abortController = null;
+      let chatGeneration = 0;
+      let currentAssistant = null;
+      let currentTurnTools = [];
+      let pendingTools = new Map();
+      let activeModel = null;
+      let serverOnline = true;
+      let modelsErrorEl = null;
+      let connectionLost = false;
+      let healthFailures = 0;
+      let lastStreamActivity = 0;
+
+      function serverUnreachableMessage() {
+        return `Can't reach the bashit server at ${location.origin}. Start it with \`pnpm dev\` in the bashit repo, then press Send again.`;
+      }
+
+      const LOST_CONNECTION_MESSAGE =
+        "Lost connection to the bashit server mid-turn (it may have restarted or crashed). The chat on the server may be gone; start a new chat if the next message fails.";
+
+      const SESSION_GONE_MESSAGE =
+        "This chat no longer exists on the server (it restarted). Your message was not sent; press Send to start a new chat with it.";
+
+      function isAbortError(error) {
+        return Boolean(
+          error &&
+            (error.name === "AbortError" || /aborted/i.test(String(error.message || ""))),
+        );
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function renderMarkdown(text) {
+        const blocks = [];
+        let rest = String(text).replace(/```([a-zA-Z0-9_+-]*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+          const index = blocks.length;
+          const language = lang ? ` class="language-${escapeHtml(lang)}"` : "";
+          blocks.push(`<pre><code${language}>${escapeHtml(code.replace(/\n$/, ""))}</code></pre>`);
+          return `\u0000BLOCK${index}\u0000`;
+        });
+
+        rest = escapeHtml(rest);
+        rest = rest.replace(/`([^`\n]+)`/g, "<code>$1</code>");
+        rest = rest.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
+
+        const paragraphs = rest
+          .split(/\n{2,}/)
+          .map((part) => part.trim())
+          .filter(Boolean)
+          .map((part) => `<p>${part.replace(/\n/g, "<br />")}</p>`)
+          .join("");
+
+        return paragraphs.replace(/\u0000BLOCK(\d+)\u0000/g, (_, index) => blocks[Number(index)] || "");
+      }
+
+      function isNearBottom() {
+        return els.main.scrollHeight - els.main.scrollTop - els.main.clientHeight < 140;
+      }
+
+      function scrollToBottom(force) {
+        if (force || isNearBottom()) {
+          els.main.scrollTop = els.main.scrollHeight;
+        }
+      }
+
+      function addUserMessage(text) {
+        const msg = document.createElement("div");
+        msg.className = "msg user";
+        msg.innerHTML = `<span class="label">you</span><div class="bubble"></div>`;
+        msg.querySelector(".bubble").textContent = text;
+        els.thread.appendChild(msg);
+        currentAssistant = null;
+        scrollToBottom(true);
+        return msg;
+      }
+
+      function assistantBubble() {
+        if (currentAssistant && currentAssistant.isConnected) {
+          return currentAssistant;
+        }
+        const msg = document.createElement("div");
+        msg.className = "msg assistant";
+        msg.innerHTML = `<span class="label">bashit</span><div class="bubble"></div>`;
+        els.thread.appendChild(msg);
+        const bubble = msg.querySelector(".bubble");
+        bubble.dataset.raw = "";
+        currentAssistant = bubble;
+        return bubble;
+      }
+
+      function addAssistantText(text) {
+        const bubble = assistantBubble();
+        const existing = bubble.dataset.raw || "";
+        const next = existing ? `${existing.replace(/\s+$/, "")}\n\n${text}` : text;
+        bubble.dataset.raw = next;
+        bubble.innerHTML = renderMarkdown(next);
+        scrollToBottom(false);
+      }
+
+      function addError(text) {
+        currentAssistant = null;
+        const msg = document.createElement("div");
+        msg.className = "msg error";
+        msg.innerHTML = `<span class="label">error</span><div class="bubble"></div>`;
+        msg.querySelector(".bubble").textContent = text;
+        els.thread.appendChild(msg);
+        scrollToBottom(false);
+        return msg;
+      }
+
+      function addToolCard(event) {
+        currentAssistant = null;
+        const card = document.createElement("details");
+        card.className = "tool";
+        card.open = true;
+        card.dataset.id = event.id;
+        card.innerHTML = `
+          <summary>
+            <span class="chev">▶</span>
+            <span class="spinner" aria-hidden="true"></span>
+            <code class="cmd"></code>
+            <span class="badge">running</span>
+          </summary>
+          <div class="body">
+            <pre class="output">waiting…</pre>
+            <div class="meta"></div>
+          </div>`;
+        card.querySelector(".cmd").textContent = event.command || "";
+        const timeout = event.timeoutSec ? `timeout ${event.timeoutSec}s` : "";
+        card.querySelector(".meta").textContent = timeout;
+        els.thread.appendChild(card);
+        currentTurnTools.push(card);
+        pendingTools.set(event.id, card);
+        scrollToBottom(false);
+        return card;
+      }
+
+      function finishToolCard(card, output, exitCode, stopped, stoppedReason = "stopped by user") {
+        if (!card) return;
+        const badge = card.querySelector(".badge");
+        const spinner = card.querySelector(".spinner");
+        if (stopped) {
+          if (spinner) spinner.outerHTML = `<span class="stopped-dot" aria-hidden="true"></span>`;
+          badge.className = "badge stopped";
+          badge.textContent = "stopped";
+        } else {
+          if (spinner) spinner.outerHTML = `<span class="stopped-dot" aria-hidden="true" style="background: var(--${exitCode === 0 ? "ok" : "bad"})"></span>`;
+          badge.className = `badge ${exitCode === 0 ? "ok" : "bad"}`;
+          badge.textContent = `exit ${exitCode === null ? "null" : exitCode}`;
+        }
+        const pre = card.querySelector(".output");
+        pre.textContent = output && output.length > 0 ? output : "(no output)";
+        const meta = card.querySelector(".meta");
+        const timeoutText = meta.dataset.timeout || meta.textContent || "";
+        meta.textContent = stopped
+          ? `${timeoutText}${timeoutText ? " · " : ""}${stoppedReason}`
+          : `${timeoutText}${timeoutText ? " · " : ""}${output ? `${output.length.toLocaleString()} chars` : "no output"}`;
+      }
+
+      function addUsage(usage) {
+        if (!usage) return;
+        const parts = [];
+        if (typeof usage.inputTokens === "number") {
+          parts.push(`${usage.inputTokens.toLocaleString()} in`);
+        }
+        if (typeof usage.outputTokens === "number") {
+          parts.push(`${usage.outputTokens.toLocaleString()} out`);
+        }
+        if (typeof usage.costUsd === "number") {
+          parts.push(`$${usage.costUsd.toFixed(4)}`);
+        }
+        if (parts.length === 0) return;
+        const line = document.createElement("div");
+        line.className = "usage";
+        line.textContent = parts.join(" · ");
+        els.thread.appendChild(line);
+      }
+
+      function showEmptyState() {
+        els.thread.innerHTML = "";
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.innerHTML = `
+          <h1>What should bashit do?</h1>
+          <p>
+            Pick a model, optionally point it at an existing absolute path, and ask.
+            The model gets one tool: <code>bash</code>. It writes files and runs
+            commands directly on this machine.
+          </p>
+          <p>Try: <code>create fib.py that prints the first 20 Fibonacci numbers, run it</code></p>`;
+        els.thread.appendChild(empty);
+      }
+
+      function clearThread() {
+        els.thread.innerHTML = "";
+      }
+
+      function setSession(session) {
+        sessionId = session.sessionId;
+        els.sessionPath.textContent = session.workspace;
+        els.sessionPath.title = session.workspace;
+        els.sessionLine.hidden = false;
+        els.workspace.value = session.workspace;
+        els.workspace.disabled = true;
+      }
+
+      function updateSendState() {
+        if (busy) {
+          if (stopRequested) {
+            els.send.textContent = "Stopping…";
+            els.send.disabled = true;
+          } else {
+            els.send.textContent = "Stop";
+            els.send.className = "stop";
+            els.send.disabled = false;
+          }
+          els.send.title = "";
+          return;
+        }
+
+        els.send.textContent = "Send";
+        els.send.className = "primary";
+        els.send.disabled = !serverOnline;
+        els.send.title = serverOnline ? "" : "bashit server is offline";
+      }
+
+      function setServerOnline(online) {
+        serverOnline = online;
+        els.health.classList.remove("unknown", "online", "offline");
+        els.health.classList.add(online ? "online" : "offline");
+        els.healthLabel.textContent = online ? "server online" : "server offline";
+        els.health.title = online
+          ? "bashit server is reachable"
+          : `Can't reach ${location.origin}`;
+        updateSendState();
+
+        // A killed server can leave the open SSE connection looking alive for
+        // a while. Only cut the stream after several failed polls and a long
+        // gap with no bytes from the stream, so one slow poll cannot kill a
+        // healthy turn.
+        if (
+          !online &&
+          busy &&
+          !stopRequested &&
+          healthFailures >= 3 &&
+          Date.now() - lastStreamActivity > 20000
+        ) {
+          connectionLost = true;
+          if (abortController) abortController.abort();
+        }
+      }
+
+      async function checkHealth() {
+        try {
+          const signal =
+            typeof AbortSignal !== "undefined" && AbortSignal.timeout
+              ? AbortSignal.timeout(4000)
+              : undefined;
+          const response = await fetch("/api/health", { cache: "no-store", signal });
+          if (!response.ok) throw new Error(`health ${response.status}`);
+          const payload = await response.json();
+          healthFailures = 0;
+          setServerOnline(payload && payload.ok === true);
+        } catch {
+          healthFailures += 1;
+          setServerOnline(false);
+        }
+      }
+
+      function setBusy(next) {
+        busy = next;
+        if (!next) {
+          stopRequested = false;
+          abortController = null;
+          connectionLost = false;
+        }
+        updateSendState();
+      }
+
+      function resetChat() {
+        chatGeneration += 1;
+        if (abortController) abortController.abort();
+        abortController = null;
+        busy = false;
+        stopRequested = false;
+        sessionId = null;
+        currentAssistant = null;
+        currentTurnTools = [];
+        pendingTools = new Map();
+        els.sessionLine.hidden = true;
+        els.sessionPath.textContent = "";
+        els.workspace.disabled = false;
+        els.workspace.value = "";
+        updateSendState();
+        showEmptyState();
+      }
+
+      async function loadModels() {
+        const response = await fetch("/api/models");
+        if (!response.ok) throw new Error("Could not load models");
+        const models = await response.json();
+        els.model.innerHTML = "";
+        const groups = {
+          claude: document.createElement("optgroup"),
+          codex: document.createElement("optgroup"),
+        };
+        groups.claude.label = "Claude";
+        groups.codex.label = "Codex";
+        for (const model of models) {
+          const option = document.createElement("option");
+          option.value = model.id;
+          option.textContent = model.label;
+          (groups[model.provider] || groups.claude).appendChild(option);
+        }
+        els.model.appendChild(groups.claude);
+        els.model.appendChild(groups.codex);
+        const remembered = storedModel && models.some((m) => m.id === storedModel);
+        els.model.value = remembered ? storedModel : models[0].id;
+        activeModel = els.model.value;
+      }
+
+      async function loadModelsWithRetry() {
+        try {
+          await loadModels();
+          if (modelsErrorEl && modelsErrorEl.isConnected) modelsErrorEl.remove();
+          modelsErrorEl = null;
+          setServerOnline(true);
+          showEmptyState();
+          els.prompt.focus();
+        } catch {
+          if (!modelsErrorEl || !modelsErrorEl.isConnected) {
+            modelsErrorEl = addError(serverUnreachableMessage());
+          }
+          setTimeout(loadModelsWithRetry, 3000);
+        }
+      }
+
+      async function stopTurn() {
+        if (!busy) return;
+        stopRequested = true;
+        updateSendState();
+        const id = sessionId;
+        if (id) {
+          fetch(`/api/chat/${id}/abort`, { method: "POST" }).catch(() => {});
+          // Let the server finish its own teardown and close the stream; the
+          // server resets `running` before it closes. Fall back to a local
+          // abort only if the stream is still open after five seconds.
+          const ac = abortController;
+          setTimeout(() => {
+            if (ac && stopRequested) ac.abort();
+          }, 5000);
+        } else if (abortController) {
+          abortController.abort();
+        }
+        for (const [toolId, card] of pendingTools) {
+          finishToolCard(card, "stopped before the command returned", null, true);
+          pendingTools.delete(toolId);
+        }
+        const note = document.createElement("div");
+        note.className = "stopped-note";
+        note.textContent = "Stopped.";
+        els.thread.appendChild(note);
+        // Keep the button disabled as "Stopping…" until the stream closes.
+        // sendPrompt's finally() restores it.
+      }
+
+      function handleEvent(event, generation) {
+        if (generation !== chatGeneration) return;
+        // The server may deliver a few more events while it tears down after
+        // Stop. Do not append text or create cards for a turn being stopped.
+        if (stopRequested && (event.type === "tool_call" || event.type === "text")) return;
+        switch (event.type) {
+          case "session":
+            setSession(event);
+            break;
+          case "text":
+            addAssistantText(event.text);
+            break;
+          case "tool_call":
+            addToolCard(event);
+            break;
+          case "tool_result": {
+            const card = pendingTools.get(event.id);
+            if (card) {
+              finishToolCard(card, event.output, event.exitCode, false);
+              pendingTools.delete(event.id);
+            }
+            break;
+          }
+          case "done":
+            for (const [toolId, card] of pendingTools) {
+              finishToolCard(card, "no result (turn ended)", null, true, "turn ended");
+              pendingTools.delete(toolId);
+            }
+            addUsage(event.usage);
+            break;
+          case "error":
+            addError(event.message);
+            break;
+        }
+      }
+
+      async function readSSE(response, onEvent) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          lastStreamActivity = Date.now();
+          buffer += decoder.decode(value, { stream: true });
+          buffer = buffer.replace(/\r\n/g, "\n");
+          let boundary = buffer.indexOf("\n\n");
+          while (boundary !== -1) {
+            const frame = buffer.slice(0, boundary);
+            buffer = buffer.slice(boundary + 2);
+            for (const line of frame.split("\n")) {
+              if (!line.startsWith("data:")) continue;
+              const data = line.slice(5).trim();
+              if (!data) continue;
+              try {
+                onEvent(JSON.parse(data));
+              } catch (error) {
+                console.error("Bad SSE data", data, error);
+              }
+            }
+            boundary = buffer.indexOf("\n\n");
+          }
+        }
+      }
+
+      function restorePrompt(prompt, userMessage, restoreEmptyState) {
+        if (userMessage && userMessage.isConnected) userMessage.remove();
+        els.prompt.value = prompt;
+        autoResize();
+        if (restoreEmptyState) showEmptyState();
+        els.prompt.focus();
+      }
+
+      async function sendPrompt() {
+        if (busy) return;
+        const prompt = els.prompt.value.trim();
+        if (!prompt) return;
+
+        const generation = chatGeneration;
+        const isNew = sessionId === null;
+        if (isNew) clearThread();
+        const userMessage = addUserMessage(prompt);
+        els.prompt.value = "";
+        autoResize();
+        setBusy(true);
+        stopRequested = false;
+        connectionLost = false;
+        lastStreamActivity = Date.now();
+        abortController = new AbortController();
+
+        const body = { model: els.model.value, prompt };
+        if (sessionId) {
+          body.sessionId = sessionId;
+        } else {
+          const workspace = els.workspace.value.trim();
+          if (workspace) body.workspace = workspace;
+        }
+
+        let response;
+        try {
+          response = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(body),
+            signal: abortController.signal,
+          });
+        } catch (error) {
+          if (
+            generation === chatGeneration &&
+            !stopRequested &&
+            (!isAbortError(error) || connectionLost)
+          ) {
+            setServerOnline(false);
+            restorePrompt(prompt, userMessage, isNew);
+            addError(serverUnreachableMessage());
+          }
+          if (generation === chatGeneration) setBusy(false);
+          return;
+        }
+
+        if (!response.ok) {
+          let message = `Request failed (${response.status}).`;
+          try {
+            const payload = await response.json();
+            if (payload && payload.error) message = payload.error;
+          } catch {}
+
+          if (generation === chatGeneration) {
+            if (!stopRequested) {
+              if (response.status === 404) {
+                restorePrompt(prompt, userMessage, false);
+                sessionId = null;
+                els.sessionLine.hidden = true;
+                els.workspace.disabled = false;
+                addError(SESSION_GONE_MESSAGE);
+              } else if (response.status === 409) {
+                restorePrompt(prompt, userMessage, false);
+                addError("The previous turn is still stopping. Press Send again.");
+              } else {
+                addError(message);
+              }
+            }
+            setBusy(false);
+          }
+          return;
+        }
+
+        const turn = { terminal: false };
+        let lostConnection = false;
+        try {
+          await readSSE(response, (event) => {
+            if (event.type === "done" || event.type === "error") turn.terminal = true;
+            handleEvent(event, generation);
+          });
+        } catch (error) {
+          if (
+            generation === chatGeneration &&
+            !stopRequested &&
+            (!isAbortError(error) || connectionLost)
+          ) {
+            setServerOnline(false);
+            addError(LOST_CONNECTION_MESSAGE);
+            lostConnection = true;
+          }
+        } finally {
+          if (generation === chatGeneration) {
+            if (!turn.terminal && !lostConnection && !stopRequested) {
+              setServerOnline(false);
+              addError(LOST_CONNECTION_MESSAGE);
+            }
+            for (const [toolId, card] of pendingTools) {
+              finishToolCard(card, "no result (connection closed)", null, true, "connection closed");
+              pendingTools.delete(toolId);
+            }
+            setBusy(false);
+          }
+        }
+      }
+
+      function autoResize() {
+        els.prompt.style.height = "auto";
+        els.prompt.style.height = `${Math.min(els.prompt.scrollHeight, 190)}px`;
+      }
+
+      els.model.addEventListener("change", () => {
+        const previous = activeModel;
+        const next = els.model.value;
+        const hasMessages = els.thread.querySelector(".msg, .tool") !== null;
+
+        if (hasMessages || busy) {
+          const message = busy
+            ? "Changing the model stops the current turn and starts a new chat. Continue?"
+            : "Changing the model starts a new chat. Continue?";
+          if (!window.confirm(message)) {
+            els.model.value = previous;
+            return;
+          }
+          activeModel = next;
+          localStorage.setItem("bashit.model", next);
+          if (busy) stopTurn();
+          resetChat();
+          return;
+        }
+
+        activeModel = next;
+        localStorage.setItem("bashit.model", next);
+      });
+
+      els.newChat.addEventListener("click", () => {
+        if (busy) {
+          const ok = window.confirm("Stop the running turn and start a new chat?");
+          if (!ok) return;
+          stopTurn();
+        }
+        resetChat();
+      });
+
+      els.send.addEventListener("click", () => {
+        if (busy) stopTurn();
+        else sendPrompt();
+      });
+
+      els.prompt.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          if (!busy) sendPrompt();
+        }
+      });
+
+      els.prompt.addEventListener("input", autoResize);
+
+      loadModelsWithRetry();
+      checkHealth();
+      setInterval(checkHealth, 5000);
+    </script>
+  </body>
+</html>
